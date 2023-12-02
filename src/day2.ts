@@ -42,3 +42,17 @@ const part1 = games.filter(function (game) {
 }).map(game => game.id).reduce((acc, v) => acc + v)
 
 console.log('Day 02, Part 1', part1)
+
+function power (game: Game): number {
+  const min = { red: 0, green: 0, blue: 0 }
+  game.hands.forEach(function (hand) {
+    if (hand.red > min.red) min.red = hand.red
+    if (hand.green > min.green) min.green = hand.green
+    if (hand.blue > min.blue) min.blue = hand.blue
+  })
+  return min.red * min.green * min.blue
+}
+
+const part2 = games.map(game => power(game)).reduce((acc, v) => acc + v)
+
+console.log('Day 02, Part 2', part2)
