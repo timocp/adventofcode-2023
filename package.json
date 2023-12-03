@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "all": "for d in src/day*.ts; do ts-node $d; done",
+    "download": "../aoc-input/download.sh",
+    "setup": "ln -sT ../aoc-input/input/2023 input",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
