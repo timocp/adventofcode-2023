@@ -44,6 +44,10 @@ class Schematic {
     return c !== '' && c !== '.' && !(c >= '0' && c <= '9')
   }
 
+  isGear = (row: number, col: number): boolean => this.at(row, col) === '*'
+
+  cellNumber = (row: number, col: number): number => row * this.width + col
+
   containsSymbol (startRow: number, numRows: number, startCol: number, numCols: number): boolean {
     for (let row = startRow; row < startRow + numRows; row++) {
       for (let col = startCol; col < startCol + numCols; col++) {
@@ -68,8 +72,44 @@ class Schematic {
     }
     return sum
   }
+
+  part2 (): number {
+    // index of gears (by position) and array of adjacent numbers
+    const gears: Record<number, number[]> = {}
+
+    for (let row = 0; row < this.height; row++) {
+      for (let col = 0; col < this.width; col++) {
+        const num = this.numberAt(row, col)
+        if (num === undefined) continue
+        const numWidth = num.toString().length
+        for (let r = row - 1; r < row + 2; r++) {
+          for (let c = col - 1; c < col + 1 + numWidth; c++) {
+            if (this.isGear(r, c)) {
+              const gearNumber = this.cellNumber(r, c)
+              if (gearNumber in gears) {
+                gears[gearNumber].push(num)
+              } else {
+                gears[gearNumber] = [num]
+              }
+            }
+          }
+        }
+      }
+    }
+
+    let sum = 0
+    for (const gearNumber in gears) {
+      if (gears[gearNumber].length > 1) {
+        sum += gears[gearNumber].reduce((acc, v) => acc * v)
+      }
+    }
+
+    return sum
+  }
 }
 
 const schematic = new Schematic(input)
 
 console.log('Day 03, Part 1', schematic.part1())
+
+console.log('Day 03, Part 2', schematic.part2())
