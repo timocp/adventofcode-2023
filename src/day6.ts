@@ -12,7 +12,12 @@ export class Day6 extends Solution {
   }
 
   part2 (): number {
-    return 0
+    const races = this.parseInput()
+    const realRace = {
+      time: +races.map(r => r.time.toString()).join(''),
+      distance: +races.map(r => r.distance.toString()).join('')
+    }
+    return this.winningMoves(realRace).length
   }
 
   winningMoves (race: Race): number[] {
