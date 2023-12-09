@@ -1,6 +1,5 @@
-import { readFileSync } from 'node:fs'
-
-const input = readFileSync('input/day3.txt', 'utf8').trimEnd().split(/\n/)
+import Solution from './solution'
+import { product } from './util'
 
 class Schematic {
   grid: string[]
@@ -100,7 +99,7 @@ class Schematic {
     let sum = 0
     for (const gearNumber in gears) {
       if (gears[gearNumber].length > 1) {
-        sum += gears[gearNumber].reduce((acc, v) => acc * v)
+        sum += product(gears[gearNumber])
       }
     }
 
@@ -108,8 +107,8 @@ class Schematic {
   }
 }
 
-const schematic = new Schematic(input)
+export class Day3 extends Solution {
+  part1 = (): number => (new Schematic(this.inputLines())).part1()
 
-console.log('Day 03, Part 1', schematic.part1())
-
-console.log('Day 03, Part 2', schematic.part2())
+  part2 = (): number => (new Schematic(this.inputLines())).part2()
+}
