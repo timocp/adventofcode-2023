@@ -162,5 +162,3 @@ export class Day5 extends Solution {
     return a
   }
 }
-
-(new Day5()).solve()

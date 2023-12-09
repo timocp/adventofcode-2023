@@ -35,5 +35,3 @@ export class Day6 extends Solution {
     })
   }
 }
-
-(new Day6()).solve()

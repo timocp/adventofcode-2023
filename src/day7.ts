@@ -119,5 +119,3 @@ export class Day7 extends Solution {
     })
   }
 }
-
-(new Day7()).solve()

@@ -57,5 +57,3 @@ export class Day8 extends Solution {
     }
   }
 }
-
-(new Day8()).solve()

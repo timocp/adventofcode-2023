@@ -32,5 +32,3 @@ export class Day9 extends Solution {
     return this.inputLines().map(line => line.split(' ').map(n => +n))
   }
 }
-
-(new Day9()).solve()
