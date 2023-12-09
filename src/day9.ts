@@ -7,7 +7,7 @@ export class Day9 extends Solution {
   }
 
   part2 (): number {
-    return 0
+    return sum(this.parseInput().map(data => this.prevValue(data)))
   }
 
   nextValue (data: number[]): number {
@@ -16,6 +16,15 @@ export class Day9 extends Solution {
       return data[data.length - 1] + diffs[0]
     } else {
       return data[data.length - 1] + this.nextValue(diffs)
+    }
+  }
+
+  prevValue (data: number[]): number {
+    const diffs = data.slice(1).map((v, i) => v - data[i])
+    if (diffs.every(v => v === 0)) {
+      return data[0] - diffs[0]
+    } else {
+      return data[0] - this.prevValue(diffs)
     }
   }
 
