@@ -8,9 +8,18 @@ import { Day7 } from './day7'
 import { Day8 } from './day8'
 import { Day9 } from './day9'
 
-const days = [
-  new Day1(), new Day2(), new Day3(), new Day4(), new Day5(),
-  new Day6(), new Day7(), new Day8(), new Day9()
+const classes = [
+  Day1, Day2, Day3, Day4, Day5, Day6, Day7, Day8, Day9
 ]
 
-days.forEach(day => { day.solve() })
+if (process.argv[2] !== undefined) {
+  const dayNumber = parseInt(process.argv[2])
+  const Klass = classes[dayNumber - 1]
+  if (Klass === undefined) {
+    console.error(`Day ${dayNumber} is unimplemented`)
+    process.exit(1)
+  }
+  (new Klass()).solve()
+} else {
+  classes.forEach(Klass => { (new Klass()).solve() })
+}
