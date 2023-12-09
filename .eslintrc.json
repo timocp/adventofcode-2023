@@ -15,6 +15,12 @@
             "parserOptions": {
                 "sourceType": "script"
             }
+        },
+        {
+            "files": [ "*.spec.ts" ],
+            "rules": {
+                "@typescript-eslint/no-floating-promises": 0
+            }
         }
     ],
     "parserOptions": {
