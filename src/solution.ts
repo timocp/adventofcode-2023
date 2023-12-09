@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs'
 
+type Result = number | string | undefined
+
 abstract class Solution {
   private readonly dayNumber: number
   private readonly rawInput: string
@@ -19,13 +21,22 @@ abstract class Solution {
 
   inputParagraphs = (): string[] => this.rawInput.trimEnd().split(/\n\n/)
 
-  public abstract part1 (): string | number
+  public abstract part1 (): Result
 
-  public abstract part2 (): string | number
+  public abstract part2 (): Result
 
   public solve (): void {
-    console.log(`Day ${this.dayNumber}, Part 1`, this.part1())
-    console.log(`Day ${this.dayNumber}, Part 2`, this.part2())
+    this.run(1, () => this.part1())
+    this.run(2, () => this.part2())
+  }
+
+  run (part: number, f: () => Result): void {
+    process.stdout.write(`Day ${this.dayNumber}, Part ${part} `)
+    const t0 = new Date()
+    const result = f()
+    const dt = ((new Date()).getTime() - t0.getTime()) / 1000
+    process.stdout.write(`[${dt.toFixed(1).padStart(4)}s] `)
+    console.log(result)
   }
 }
 
