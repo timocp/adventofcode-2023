@@ -1,4 +1,5 @@
 import Solution from './solution'
+import { replaceAt } from './util'
 
 interface P { x: number, y: number }
 
@@ -19,9 +20,14 @@ const neighbours = (p: P): Array<[Dir, P]> => [
 class Maze {
   grid: string[]
   start: P
+  width: number
+  height: number
+
+  at = (p: P): string => this.grid[p.y][p.x]
 
   connects (p: P, dir: Dir): boolean {
-    const c = this.grid[p.y][p.x]
+    if (p.x < 0 || p.x >= this.width || p.y < 0 || p.y >= this.height) return false
+    const c = this.at(p)
     switch (dir) {
       case Dir.north: return ['|', 'L', 'J'].includes(c)
       case Dir.east: return ['-', 'L', 'F'].includes(c)
@@ -32,6 +38,8 @@ class Maze {
 
   constructor (lines: string[]) {
     this.grid = lines
+    this.width = lines[0].length
+    this.height = lines.length
     const y = lines.findIndex(line => line.includes('S'))
     const x = lines[y].indexOf('S')
     this.start = { x, y }
@@ -59,23 +67,94 @@ class Maze {
     }
   }
 
-  loopLength (): number {
+  // Returns the length of the loop
+  // If `mark` is true, replace the loop's pipe's with an 'X'
+  loopLength (mark?: boolean): number {
     let count = 0
     let prev = this.start
     let p = this.start
-    // console.log(this.toString())
-    // console.log(`Starting from ${p.x},${p.y}`)
     do {
       const n = neighbours(p).find(([dir, n]) => {
         return !(n.x === prev.x && n.y === prev.y) && this.connects(p, dir)
       })
       if (n === undefined) throw new Error(`Stuck at ${p.x},${p.y}`)
       prev = p
-      // console.log(`Moving ${['N', 'E', 'S', 'W'][n[0]]} from ${prev.x},${prev.y} to ${n[1].x},${n[1].y}`)
+      if (mark !== undefined && mark) this.grid[prev.y] = replaceAt(this.grid[prev.y], prev.x, 'X')
       p = n[1]
       count++
     } while (!(p.x === this.start.x && p.y === this.start.y))
+    if (mark !== undefined && mark) this.grid[prev.y] = replaceAt(this.grid[prev.y], prev.x, 'X')
     return count
+  }
+
+  // triple the size of the maze in both axes
+  embiggen (): void {
+    this.grid = this.grid.flatMap(row => {
+      const row0: string[] = []
+      const row1: string[] = []
+      const row2: string[] = []
+      row.split('').forEach(c => {
+        switch (c) {
+          case '|':
+            row0.push('.|.')
+            row1.push('.|.')
+            row2.push('.|.')
+            break
+          case '-':
+            row0.push('...')
+            row1.push('---')
+            row2.push('...')
+            break
+          case 'L':
+            row0.push('.|.')
+            row1.push('.L-')
+            row2.push('...')
+            break
+          case 'J':
+            row0.push('.|.')
+            row1.push('-J.')
+            row2.push('...')
+            break
+          case '7':
+            row0.push('...')
+            row1.push('-7.')
+            row2.push('.|.')
+            break
+          case 'F':
+            row0.push('...')
+            row1.push('.F-')
+            row2.push('.|.')
+            break
+          case '.':
+            row0.push('...')
+            row1.push('...')
+            row2.push('...')
+            break
+          default:
+            throw new Error(`Unexpected cell: ${c}`)
+        }
+      })
+      return [row0.join(''), row1.join(''), row2.join('')]
+    })
+    this.start = { x: this.start.x * 3 + 1, y: this.start.y * 3 + 1 }
+    this.width *= 3
+    this.height *= 3
+  }
+
+  // iterative version since the recursive version exceeds stack size
+  dfs_iter (visited: boolean[][], start: P): void {
+    const stack: P[] = [start]
+    while (stack.length > 0) {
+      const p = stack.pop()
+      if (p === undefined) throw new Error('unreachable')
+      visited[p.y][p.x] = true
+      neighbours(p)
+        .map(([_, n]) => n)
+        .filter(n => n.x >= 0 && n.x < this.width && n.y >= 0 && n.y < this.height)
+        .filter(n => !visited[n.y][n.x])
+        .filter(n => this.at(n) !== 'X')
+        .forEach(n => { stack.push(n) })
+    }
   }
 
   toString (): string {
@@ -88,7 +167,7 @@ class Maze {
       F: '┌'
     }
     return this.grid.map(row => {
-      return row.replace(/[|\-LJ7F]/g, m => tr[m] ?? ' ') + '\n'
+      return row.replace(/[|\-LJ7F]/g, m => tr[m] ?? m) + '\n'
     }).join('')
   }
 }
@@ -96,7 +175,27 @@ class Maze {
 export class Day10 extends Solution {
   part1 = (): number => new Maze(this.inputLines()).loopLength() / 2
 
+  // For part 2, grow the maze by 3 times in both axes;
+  // This allows us to DFS from (0,0), which must be outside the loop, and note
+  // each cell that was able to be visited.
+  // Afterwards, any cell not reached by the search which is not part of the
+  // loop and corresponds to an original pre-embiggened maze cell, counts
+  // as inside the loop
   part2 (): number {
-    return 0
+    const maze = new Maze(this.inputLines())
+    maze.embiggen()
+    maze.loopLength(true)
+    const visited = maze.grid.map(row => row.split('').map(_ => false))
+    maze.dfs_iter(visited, { x: 0, y: 0 })
+
+    // every 3rd row/col starting at offset 1 corresponds to the original maze
+    let count = 0
+    for (let y = 1; y < maze.height; y += 3) {
+      for (let x = 1; x < maze.width; x += 3) {
+        if (maze.at({ x, y }) !== 'X' && !visited[y][x]) count++
+      }
+    }
+
+    return count
   }
 }

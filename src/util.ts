@@ -9,3 +9,8 @@ export const gcd: (a: number, b: number) => number = (a: number, b: number): num
 export const lcm: (a: number, b: number) => number = (a: number, b: number): number => a / gcd(a, b) * b
 
 export const lcmAll: (a: number[]) => number = (a: number[]): number => a.reduce(lcm, 1)
+
+export const replaceAt: (s: string, i: number, c: string) =>
+string = (s: string, i: number, c: string) => {
+  return s.substring(0, i) + c + s.substring(i + 1)
+}
