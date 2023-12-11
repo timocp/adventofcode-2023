@@ -31,7 +31,7 @@ abstract class Solution {
   }
 
   run (part: number, f: () => Result): void {
-    process.stdout.write(`Day ${this.dayNumber}, Part ${part} `)
+    process.stdout.write(`Day ${this.dayNumber.toString().padStart(2)}, Part ${part} `)
     const t0 = new Date()
     const result = f()
     const dt = ((new Date()).getTime() - t0.getTime()) / 1000
