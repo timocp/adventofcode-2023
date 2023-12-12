@@ -18,4 +18,6 @@ const testInput = `
 describe('Day11', () => {
   const d = new Day11(testInput)
   it('part1 example1', () => { equal(d.part1(), 374) })
+  it('part2 example1', () => { equal(d.part2(10 - 1), 1030) })
+  it('part2 example1', () => { equal(d.part2(100 - 1), 8410) })
 })

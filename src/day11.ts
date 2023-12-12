@@ -3,68 +3,67 @@ import Solution from './solution'
 interface P { x: number, y: number }
 
 class Image {
-  grid: Array<Array<number | null>>
   width: number
   height: number
-  galaxies: number
-  galaxyPositions: P[]
+  galaxies: P[]
 
   constructor (lines: string[]) {
-    this.galaxies = 0
-    this.grid = lines.flatMap(line => {
-      const row = line.split('').map(c => c === '#' ? this.galaxies++ : null)
-      if (/^\.+$/.test(line)) {
-        // double empty rows
-        return [row, row]
-      } else {
-        return [row]
-      }
-    })
-    // double empty columns
-    for (let x = 0; x < this.grid[0].length; x++) {
-      if (this.grid.every(row => row[x] === null)) {
-        this.grid.forEach(row => row.splice(x, 0, null))
-        x += 1
+    this.galaxies = []
+    for (let y = 0; y < lines.length; y++) {
+      for (let x = 0; x < lines[y].length; x++) {
+        if (lines[y][x] === '#') this.galaxies.push({ x, y })
       }
     }
+    this.height = lines.length
+    this.width = lines[0].length
+  }
 
-    this.width = this.grid[0].length
-    this.height = this.grid.length
-
-    // work out the positions of each galaxy
-    this.galaxyPositions = []
+  expandSpace (f: number): void {
+    // expand empty rows
     for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        if (this.grid[y][x] !== null) this.galaxyPositions.push({ x, y })
+      if (this.galaxies.every(p => p.y !== y)) {
+        this.galaxies.filter(p => p.y > y).forEach(p => { p.y += f })
+        y += f
+        this.height += f
+      }
+    }
+    // expand empty columns
+    for (let x = 0; x < this.width; x++) {
+      if (this.galaxies.every(p => p.x !== x)) {
+        this.galaxies.filter(p => p.x > x).forEach(p => { p.x += f })
+        x += f
+        this.width += f
       }
     }
   }
 
   distance (a: number, b: number): number {
-    return Math.abs(this.galaxyPositions[a].x - this.galaxyPositions[b].x) +
-           Math.abs(this.galaxyPositions[a].y - this.galaxyPositions[b].y)
+    return Math.abs(this.galaxies[a].x - this.galaxies[b].x) +
+           Math.abs(this.galaxies[a].y - this.galaxies[b].y)
   }
-}
 
-export class Day11 extends Solution {
-  part1 (): number {
-    const image = this.parseInput()
-
+  totalDistances (): number {
     let sumDistances = 0
-    for (let fromGalaxy = 0; fromGalaxy < image.galaxies; fromGalaxy++) {
-      for (let toGalaxy = fromGalaxy + 1; toGalaxy < image.galaxies; toGalaxy++) {
-        sumDistances += image.distance(fromGalaxy, toGalaxy)
+    for (let fromGalaxy = 0; fromGalaxy < this.galaxies.length; fromGalaxy++) {
+      for (let toGalaxy = fromGalaxy + 1; toGalaxy < this.galaxies.length; toGalaxy++) {
+        sumDistances += this.distance(fromGalaxy, toGalaxy)
       }
     }
     return sumDistances
   }
-
-  part2 (): number {
-    return 0
+}
+export class Day11 extends Solution {
+  part1 (): number {
+    const image = this.parseInput()
+    image.expandSpace(1)
+    return image.totalDistances()
   }
 
-  parseInput (): Image {
-    const image = new Image(this.inputLines())
-    return image
+  part2 (expand?: number): number {
+    const image = this.parseInput()
+    image.expandSpace(expand ?? 999999)
+    return image.totalDistances()
   }
+
+  parseInput = (): Image => new Image(this.inputLines())
 }
