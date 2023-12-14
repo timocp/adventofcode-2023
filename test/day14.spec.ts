@@ -18,4 +18,5 @@ O.#..O.#.#
 describe('Day11', () => {
   const d = new Day14(testInput)
   it('part1 example1', () => { equal(d.part1(), 136) })
+  it('part2 example1', () => { equal(d.part2(), 64) })
 })
