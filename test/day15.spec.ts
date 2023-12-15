@@ -8,4 +8,5 @@ describe('Day15', () => {
   const d = new Day15(testInput)
   it('hash', () => { equal(hash('HASH'), 52) })
   it('part1 example1', () => { equal(d.part1(), 1320) })
+  it('part2 example1', () => { equal(d.part2(), 145) })
 })
