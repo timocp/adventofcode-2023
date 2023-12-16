@@ -57,8 +57,9 @@ class Contraption {
     })
   }
 
-  resetBeams (): void {
+  reset (): void {
     this.beams = this.emptyBeams()
+    this.layout.forEach(row => { row.forEach(cell => { cell.energised = false }) })
   }
 
   countEnergised (): number {
@@ -74,29 +75,50 @@ class Contraption {
   // returns the energised cell count from given starting position
   // TODO: can the state cache be shared?  I think it will need to be for part 2
   // as each sim takes about a second and we'll need 440 runs
-  run (): number {
+  run (x: number, y: number, dir: Dir): number {
+    this.reset()
+    this.layout[y][x].energised = true
+    console.log(x, y, dir, this.layout[y][x])
     // Direction of initial beam depends on mirror at 0,0
-    switch (this.layout[0][0].thing) {
+    switch (this.layout[y][x].thing) {
+      case '.':
+        this.beams[y][x][dir] = true
+        break
       case '\\':
-        this.beams[0][0][Dir.south] = true
+        this.beams[y][x][mirrorB[dir]] = true
         break
       case '/':
-        this.beams[0][0][Dir.north] = true
+        this.beams[y][x][mirrorA[dir]] = true
         break
       case '|':
-        this.beams[0][0][Dir.north] = true
-        this.beams[0][0][Dir.south] = true
+        if (dir === Dir.east || dir === Dir.west) {
+          this.beams[y][x][Dir.north] = true
+          this.beams[y][x][Dir.south] = true
+        } else {
+          this.beams[y][x][dir] = true
+        }
+        break
+      case '-':
+        if (dir === Dir.north || dir === Dir.south) {
+          this.beams[y][x][Dir.east] = true
+          this.beams[y][x][Dir.west] = true
+        } else {
+          this.beams[y][x][dir] = true
+        }
         break
       default:
-        this.beams[0][0][Dir.east] = true
+        throw new Error('Unhandled input')
     }
-    this.layout[0][0].energised = true
-    const seen: Record<string, number> = {}
+    const seen: Record<string, boolean> = {}
     while (true) {
       this.move()
       const st = this.state()
-      if (seen[st] !== undefined) return seen[st]
-      seen[st] = this.countEnergised()
+      if (seen[st] !== undefined) {
+        const a = this.countEnergised()
+        console.log(`Result for starting from ${x},${y} facing ${dir}`, a)
+        return a
+      }
+      seen[st] = true
     }
   }
 
@@ -165,12 +187,28 @@ class Contraption {
 export class Day16 extends Solution {
   part1 (): number {
     const contraption = this.parseInput()
-    contraption.run()
+    contraption.run(0, 0, Dir.east)
     return contraption.countEnergised()
   }
 
   part2 (): number {
-    return 0
+    const contraption = this.parseInput()
+    let max = 0
+    for (let x = 0; x < contraption.layout[0].length; x++) {
+      const r = Math.max(
+        contraption.run(x, 0, Dir.south),
+        contraption.run(x, contraption.layout.length - 1, Dir.north)
+      )
+      if (r > max) max = r
+    }
+    for (let y = 0; y < contraption.layout.length; y++) {
+      const r = Math.max(
+        contraption.run(0, y, Dir.east),
+        contraption.run(contraption.layout[0].length - 1, y, Dir.west)
+      )
+      if (r > max) max = r
+    }
+    return max
   }
 
   parseInput = (): Contraption => new Contraption(this.inputLines())
