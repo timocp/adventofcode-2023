@@ -36,4 +36,5 @@ describe('arrangements', () => {
 describe('Day12', () => {
   const d = new Day12(testInput)
   it('part1', () => { equal(d.part1(), 21) })
+  it('part2', () => { equal(d.part2(), 525152) })
 })
