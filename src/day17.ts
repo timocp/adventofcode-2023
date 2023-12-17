@@ -52,14 +52,14 @@ class Maze {
   }
 }
 
+type NextStatesFn = (s: State, m: Maze) => State[]
+
 // Djikstra search through a maze, from (0,0) to (end,end)
 // Maybe A* using MH distance to end would perform better?
 //
 // Returns the heat loss (cost) incurred (total of the values passed through)
-// Rules:
-// May only move Left,Right,Forward
-// May only move forward 3 times in a row
-const search = (maze: Maze): number => {
+// Movement rules handled by nextStates callback
+const search = (maze: Maze, nextStates: NextStatesFn): number => {
   // lowest cost to reach a certain state.  State has to include direction and steps
   // as well as position, because there may be cheaper ways to get to a specific position
   // that are not part of the best path due to how they arrived there.
@@ -67,60 +67,92 @@ const search = (maze: Maze): number => {
 
   const queue = new PriorityQueue<State>()
 
-  // debugging only - where are we coming from?
-  // const from: Record<string, string> = {}
-
   queue.push({ x: 0, y: 0, dir: Dir.east, steps: 0, cost: 0 }, 0)
 
   while (queue.size() > 0) {
     const state = queue.pop()
 
     if (state.x === maze.width - 1 && state.y === maze.height - 1) {
-      // console.log(state)
-      // console.log('Path:')
-      // let n = 0
-      // for (let k = stateKey(state); k !== undefined; k = from[k]) {
-      //   n++
-      //   console.log(`  ${k}`)
-      // }
-      // console.log(` ${n} steps`)
       return state.cost
     }
 
     const key = stateKey(state)
     if (state.cost > (dist[key] ?? Infinity)) continue
 
-    for (let dir: Dir = 0; dir < 4; dir++) {
-      if (dir === opposite[state.dir]) continue
-      const [dx, dy] = delta[dir]
-      const next: State = {
-        x: state.x + dx,
-        y: state.y + dy,
-        dir,
-        cost: 0,
-        steps: dir === state.dir ? state.steps + 1 : 1
-      }
-      if (next.x === 0 && next.y === 0) continue
-      if (next.steps > 3) continue
-      const stepCost = maze.at(next.x, next.y)
-      if (stepCost === undefined) continue
-      next.cost = state.cost + stepCost
+    nextStates(state, maze).forEach(next => {
       const nextKey = stateKey(next)
       if (next.cost < (dist[nextKey] ?? Infinity)) {
         queue.push(next, next.cost)
         dist[nextKey] = next.cost
-        // from[nextKey] = key
       }
-    }
+    })
   }
 
   throw new Error('no path?')
 }
 
-export class Day17 extends Solution {
-  part1 = (): number => search(this.getMaze())
+// Valid next steps
+const crucibleNextStates: NextStatesFn = (state: State, maze: Maze): State[] => {
+  const moves: State[] = []
+  for (let dir: Dir = 0; dir < 4; dir++) {
+    if (dir === opposite[state.dir]) continue
+    const [dx, dy] = delta[dir]
+    const heat = maze.at(state.x + dx, state.y + dy)
+    if (heat === undefined) continue
+    const next: State = {
+      x: state.x + dx,
+      y: state.y + dy,
+      dir,
+      cost: state.cost + heat,
+      steps: dir === state.dir ? state.steps + 1 : 1
+    }
+    if (next.steps > 3) continue
+    moves.push(next)
+  }
+  return moves
+}
 
-  part2 = (): number => 0
+const ultraCrucibleNextStates: NextStatesFn = (state: State, maze: Maze): State[] => {
+  // if between 1-3 steps, the only valid move is to keep going in the same direction
+  if (state.steps >= 1 && state.steps <= 3) {
+    const [dx, dy] = delta[state.dir]
+    const heat = maze.at(state.x + dx, state.y + dy)
+    if (heat === undefined) {
+      return []
+    } else {
+      return [{
+        x: state.x + dx,
+        y: state.y + dy,
+        dir: state.dir,
+        cost: state.cost + heat,
+        steps: state.steps + 1
+      }]
+    }
+  }
+  // otherwise, normal rules but max is now 10
+  const moves: State[] = []
+  for (let dir: Dir = 0; dir < 4; dir++) {
+    if (dir === opposite[state.dir]) continue
+    const [dx, dy] = delta[dir]
+    const heat = maze.at(state.x + dx, state.y + dy)
+    if (heat === undefined) continue
+    const next: State = {
+      x: state.x + dx,
+      y: state.y + dy,
+      dir,
+      cost: state.cost + heat,
+      steps: dir === state.dir ? state.steps + 1 : 1
+    }
+    if (next.steps > 10) continue
+    moves.push(next)
+  }
+  return moves
+}
+
+export class Day17 extends Solution {
+  part1 = (): number => search(this.getMaze(), crucibleNextStates)
+
+  part2 = (): number => search(this.getMaze(), ultraCrucibleNextStates)
 
   getMaze = (): Maze => new Maze(this.inputLines())
 }
