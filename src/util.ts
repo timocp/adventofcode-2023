@@ -14,3 +14,8 @@ export const replaceAt: (s: string, i: number, c: string) =>
 string = (s: string, i: number, c: string) => {
   return s.substring(0, i) + c + s.substring(i + 1)
 }
+
+export const must = <T>(t: T | undefined): T => {
+  if (t === undefined) throw new Error('assertion failed: value undefined')
+  return t
+}

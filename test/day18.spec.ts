@@ -22,4 +22,5 @@ U 2 (#7a21e3)
 describe('Day18', () => {
   const d = new Day18(testInput)
   it('part1 example1', () => { equal(d.part1(), 62) })
+  it('part2 example1', () => { equal(d.part2(), 952408144115) })
 })
