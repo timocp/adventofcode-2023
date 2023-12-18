@@ -83,8 +83,6 @@ class Lagoon {
     this.realY.unshift(this.realY[0] - 1)
     this.realX.push(this.realX[this.realX.length - 1] + 1)
     this.realY.push(this.realY[this.realY.length - 1] + 1)
-    // console.log('realX', this.realX)
-    // console.log('realY', this.realY)
 
     // setup array which marks the trench location
     this.trench = this.realY.map(_ => this.realX.map(_ => false))
@@ -92,34 +90,18 @@ class Lagoon {
     // setup reverse map from real coordinates to grid indexes
     this.realX.forEach((x, i) => { this.gridX[x] = i })
     this.realY.forEach((y, i) => { this.gridY[y] = i })
-    // console.log('gridX', this.gridX)
-    // console.log('gridY', this.gridY)
-
-    // const tx: Record<number, number> = {}
-    // this.realX.forEach((x, i) => { tx[x] = i })
-    // console.log('tx', tx)
-    // const ty: Record<number, number> = {}
-    // this.realY.forEach((y, i) => { ty[y] = i })
 
     // walk the instructions again to mark out the trench on the grid
     const digger = this.toGrid({ x: 0, y: 0 })
-    // console.log('digger starts at', digger, 'which is really', this.toReal(digger))
     instructions.forEach(instr => {
-      // console.log('instruction', instr)
       const [dx, dy] = delta[instr.dir]
       const realTarget: P = { x: this.realX[digger.x] + dx * instr.distance, y: this.realY[digger.y] + dy * instr.distance }
-      // console.log('realTarget', realTarget)
       const target: P = this.toGrid(realTarget)
-      // console.log('target', target, 'which is really', this.toReal(target))
       while (digger.x !== target.x || digger.y !== target.y) {
         digger.x += dx
         digger.y += dy
-        // console.log('digger moved to', digger, 'which really means', this.toReal(digger))
-        this.trench[digger.y][digger.x] = true
-        // if (digger.x < 0 || digger.y < 0 || digger.x >= this.realX.length || digger.y >= this.realY.length) throw new Error('bad movement')
         this.trench[digger.y][digger.x] = true
       }
-      // console.log('ok digger made it to', digger, 'which is really', this.toReal(digger))
     })
   }
 
@@ -129,18 +111,10 @@ class Lagoon {
     const exterior: boolean[][] = this.trench.map(row => row.map(_ => false))
     this.dfs(exterior, { x: 0, y: 0 })
 
-    // console.log(exterior)
     let intArea = 0
     for (let y = 0; y < exterior.length - 1; y++) {
       for (let x = 0; x < exterior[0].length - 1; x++) {
         if (!exterior[y][x]) intArea += this.area({ x, y })
-        // const area = this.area({ x, y })
-        // if (exterior[y][x]) {
-        //   console.log(`Grid ${x},${y} is outside, it correspondes to:`, this.toReal({ x, y }), 'to', this.toReal({ x: x + 1, y: y + 1 }), 'with area', area)
-        // } else {
-        //   console.log(`Grid ${x},${y} is inside, it correspondes to:`, this.toReal({ x, y }), 'to', this.toReal({ x: x + 1, y: y + 1 }), 'with area', area)
-        //   intArea += area
-        // }
       }
     }
     return intArea
