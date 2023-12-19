@@ -25,4 +25,5 @@ hdj{m>838:A,pv}
 describe('Day19', () => {
   const d = new Day19(testInput)
   it('part1 example1', () => { equal(d.part1(), 19114) })
+  it('part2 example1', () => { equal(d.part2(), 167409079868000) })
 })
