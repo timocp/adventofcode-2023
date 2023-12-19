@@ -16,10 +16,11 @@ import { Day15 } from './day15'
 import { Day16 } from './day16'
 import { Day17 } from './day17'
 import { Day18 } from './day18'
+import { Day19 } from './day19'
 
 const classes = [
   Day1, Day2, Day3, Day4, Day5, Day6, Day7, Day8, Day9, Day10,
-  Day11, Day12, Day13, Day14, Day15, Day16, Day17, Day18
+  Day11, Day12, Day13, Day14, Day15, Day16, Day17, Day18, Day19
 ]
 
 if (process.argv[2] !== undefined) {
