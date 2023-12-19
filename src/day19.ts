@@ -18,9 +18,6 @@ const toCat: Record<string, Cat> = {
 enum Op {
   lt,
   gt,
-  accept,
-  reject,
-  goto
 }
 
 interface CompareRule {
@@ -90,18 +87,17 @@ class Workflow {
 }
 
 class System {
-  workflows: Map<string, Workflow>
   tree: Node
 
   constructor (workflows: Workflow[]) {
-    this.workflows = new Map()
-    workflows.forEach(workflow => this.workflows.set(workflow.name, workflow))
-    this.tree = this.buildTree('in', 0)
-    // console.log(this.tree)
+    const wfmap = new Map<string, Workflow>()
+    workflows.forEach(workflow => wfmap.set(workflow.name, workflow))
+    this.tree = this.buildTree(wfmap, 'in', 0)
   }
 
-  buildTree = (workflowName: string, ruleNumber: number): Node => {
-    const workflow = this.getWorkflow(workflowName)
+  buildTree = (wfmap: Map<string, Workflow>, workflowName: string, ruleNumber: number): Node => {
+    const workflow = wfmap.get(workflowName)
+    if (workflow === undefined) throw new Error(`invalid workflow: ${workflowName}`)
     const rule = workflow.rules[ruleNumber]
     switch (rule.kind) {
       case 'compare':
@@ -110,26 +106,20 @@ class System {
           cat: rule.cat,
           op: rule.op,
           val: rule.val,
-          true: this.targetToNode(rule.target),
-          false: this.buildTree(workflowName, ruleNumber + 1)
+          true: this.targetToNode(wfmap, rule.target),
+          false: this.buildTree(wfmap, workflowName, ruleNumber + 1)
         }
       case 'goto':
-        return this.targetToNode(rule.target)
+        return this.targetToNode(wfmap, rule.target)
       case 'accept':
         return rule // AcceptRule and AcceptNode have same structure
     }
   }
 
-  targetToNode = (target: string): Node => {
+  targetToNode = (wfmap: Map<string, Workflow>, target: string): Node => {
     if (target === 'A') return { kind: 'accept', accept: true }
     if (target === 'R') return { kind: 'accept', accept: false }
-    return this.buildTree(target, 0)
-  }
-
-  getWorkflow (name: string): Workflow {
-    const workflow = this.workflows.get(name)
-    if (workflow === undefined) throw new Error(`Invalid workflow: ${name}`)
-    return workflow
+    return this.buildTree(wfmap, target, 0)
   }
 
   countDistinctCombinations (): number {
@@ -145,7 +135,7 @@ class System {
   }
 
   // walk tree and call callback for each leaf with when accept:true
-  // the value passed the the callmacks is the min/max for each cat that would have filtered to that node
+  // the value passed the the callback is the min/max for each cat that would have filtered to that node
   walkTree (node: Node, clamps: Clamp[], callback: (clamps: Clamp[]) => void): void {
     switch (node.kind) {
       case 'branch':
@@ -172,24 +162,19 @@ class System {
     }
   }
 
-  // TODO: probably can rewrite using tree
   accept (part: Part): boolean {
-    let workflowName = 'in'
-    while (true) {
-      const workflow = this.getWorkflow(workflowName)
-      const rule = workflow.rules.find(rule => {
-        if (rule.kind === 'compare') {
-          if (rule.op === Op.lt) return part[rule.cat] < rule.val
-          if (rule.op === Op.gt) return part[rule.cat] > rule.val
-        }
-        return true
-      })
-      if (rule === undefined) throw new Error('unreachable')
-      if (rule.kind === 'accept') return rule.accept
-      workflowName = rule.target
-      if (workflowName === 'A') return true
-      if (workflowName === 'R') return false
+    let node = this.tree
+    while (node.kind !== 'accept') {
+      switch (node.op) {
+        case Op.lt:
+          node = part[node.cat] < node.val ? node.true : node.false
+          break
+        case Op.gt:
+          node = part[node.cat] > node.val ? node.true : node.false
+          break
+      }
     }
+    return node.accept
   }
 }
 
