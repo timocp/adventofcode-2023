@@ -1,7 +1,6 @@
 import Solution from './solution'
-import { enumerate, must } from './util'
+import { enumerate, must, sum } from './util'
 
-// coords are always non-negative
 interface P {
   x: number
   y: number
@@ -9,7 +8,7 @@ interface P {
 }
 
 interface Brick {
-  label: string // just to match examples
+  label: string
   from: P
   to: P
 }
@@ -44,84 +43,117 @@ const findGap = (column: string[], label: string): number => {
   throw new Error(`couldn't find ${label} in ${column.join(',')}`)
 }
 
-const fall = (bricks: Brick[]): number => {
-  const maxx = Math.max(...bricks.flatMap(brick => [brick.from.x, brick.to.x]))
-  const maxy = Math.max(...bricks.flatMap(brick => [brick.from.y, brick.to.y]))
+class FallingBricks {
+  bricks: Brick[]
+  space: string[][][]
+  _holdingUp: Map<string, Set<string>>
+  _heldUpBy: Map<string, Set<string>>
 
-  const space: string[][][] = enumerate(maxy + 1).map(_ => enumerate(maxx + 1).map(_ => ['#']))
+  constructor (bricks: Brick[]) {
+    this.bricks = bricks
 
-  bricks.forEach(brick => {
-    // insert the brick into the 3d array
-    segments(brick).forEach(p => {
-      while (space[p.y][p.x].length <= p.z) space[p.y][p.x].push('.')
-      space[p.y][p.x][p.z] = brick.label
+    // 3d array to hold the brick positions
+    const maxx = Math.max(...bricks.flatMap(brick => [brick.from.x, brick.to.x]))
+    const maxy = Math.max(...bricks.flatMap(brick => [brick.from.y, brick.to.y]))
+    this.space = enumerate(maxy + 1).map(_ => enumerate(maxx + 1).map(_ => ['#']))
+
+    this._holdingUp = new Map<string, Set<string>>()
+    this._heldUpBy = new Map<string, Set<string>>()
+    bricks.forEach(brick => {
+      this._holdingUp.set(brick.label, new Set())
+      this._heldUpBy.set(brick.label, new Set())
     })
+  }
 
-    // if the brick can fall, move it down
-    if (brick.from.x !== brick.to.x || brick.from.y !== brick.to.y) {
-      const gap = Math.min(...segments(brick).map(p => findGap(space[p.y][p.x], brick.label)))
-      if (gap > 0) {
-        segments(brick).forEach(p => {
-          space[p.y][p.x].splice(brick.to.z - gap, gap)
-        })
-        brick.to.z -= gap
-        brick.from.z -= gap
-      }
-    } else {
-      const gap = findGap(space[brick.to.y][brick.to.x], brick.label)
-      if (gap > 0) {
-        space[brick.to.y][brick.to.x].splice(Math.min(brick.from.z, brick.to.z) - gap, gap)
-        brick.to.z -= gap
-        brick.from.z -= gap
-      }
-    }
-  })
+  holdingUp = (label: string): string[] => Array.from(must(this._holdingUp.get(label)))
+  heldUpBy = (label: string): string[] => Array.from(must(this._heldUpBy.get(label)))
 
-  // work out which bricks are resting on others
-  const holdingUp = new Map<string, Set<string>>()
-  const heldUpBy = new Map<string, Set<string>>()
-  bricks.forEach(brick => {
-    holdingUp.set(brick.label, new Set())
-    heldUpBy.set(brick.label, new Set())
-  })
-  bricks.forEach(brick => {
-    segments(brick).forEach(p => {
-      const above = space[p.y][p.x][p.z + 1] ?? '.'
-      if (above !== '.' && above !== brick.label) {
-        holdingUp.get(brick.label)?.add(above)
-        heldUpBy.get(above)?.add(brick.label)
-      }
-    })
-  })
-  // console.log({ heldUpBy, holdingUp })
+  dropBricks (): void {
+    this.bricks.forEach(brick => {
+      // insert the brick into the 3d array
+      segments(brick).forEach(p => {
+        while (this.space[p.y][p.x].length <= p.z) this.space[p.y][p.x].push('.')
+        this.space[p.y][p.x][p.z] = brick.label
+      })
 
-  // finally, count the ones that could be removed without others falling
-  let count = 0
-  bricks.forEach(brick => {
-    if (holdingUp.get(brick.label)?.size === 0) {
-      // console.log(`Brick ${brick.label} can be disintegrated; it does not support other bricks`)
-      count++
-    } else {
-      const above: string[] = Array.from(must(holdingUp.get(brick.label)).values())
-      if (above.every(b => must(heldUpBy.get(b)).size > 1)) {
-        // console.log(`Brick ${brick.label} can be disintegrated; the bricks above it are also supported by others`)
-        count++
+      // if the brick can fall, move it down
+      if (brick.from.x !== brick.to.x || brick.from.y !== brick.to.y) {
+        const gap = Math.min(...segments(brick).map(p => findGap(this.space[p.y][p.x], brick.label)))
+        if (gap > 0) {
+          segments(brick).forEach(p => {
+            this.space[p.y][p.x].splice(brick.to.z - gap, gap)
+          })
+          brick.to.z -= gap
+          brick.from.z -= gap
+        }
       } else {
-        // console.log(`Brick ${brick.label} cannot be disintegrated; it is holding up bricks which no other support`)
+        const gap = findGap(this.space[brick.to.y][brick.to.x], brick.label)
+        if (gap > 0) {
+          this.space[brick.to.y][brick.to.x].splice(Math.min(brick.from.z, brick.to.z) - gap, gap)
+          brick.to.z -= gap
+          brick.from.z -= gap
+        }
       }
-    }
-  })
+    })
+    this.setupMaps()
+  }
 
-  return count
+  private setupMaps (): void {
+    this.bricks.forEach(brick => {
+      segments(brick).forEach(p => {
+        const above = this.space[p.y][p.x][p.z + 1] ?? '.'
+        if (above !== '.' && above !== brick.label) {
+          must(this._holdingUp.get(brick.label)).add(above)
+          must(this._heldUpBy.get(above)).add(brick.label)
+        }
+      })
+    })
+  }
+
+  countDisintegratable (): number {
+    // finally, count the ones that could be removed without others falling
+    let count = 0
+    this.bricks.forEach(brick => {
+      if (this.holdingUp(brick.label).length === 0) {
+        count++
+      } else if (this.holdingUp(brick.label).every(b => this.heldUpBy(b).length > 1)) {
+        count++
+      }
+    })
+    return count
+  }
+
+  chainReaction (): number {
+    return sum(this.bricks.map(brick => {
+      const destroyed = new Set<string>()
+      this.chainReactionFrom(brick.label, destroyed)
+      return destroyed.size
+    }))
+  }
+
+  private chainReactionFrom (label: string, destroyed: Set<string>): void {
+    const destroying: string[] = []
+    this.holdingUp(label).forEach(above => {
+      if (this.heldUpBy(above).filter(other => !(other === label || destroyed.has(other))).length === 0) {
+        destroying.push(above)
+        destroyed.add(above)
+      }
+    })
+    destroying.forEach(above => { this.chainReactionFrom(above, destroyed) })
+  }
 }
 
 export class Day22 extends Solution {
   part1 (): number {
-    return fall(this.getBricks())
+    const fb = new FallingBricks(this.getBricks())
+    fb.dropBricks()
+    return fb.countDisintegratable()
   }
 
   part2 (): number {
-    return 0
+    const fb = new FallingBricks(this.getBricks())
+    fb.dropBricks()
+    return fb.chainReaction()
   }
 
   // returns bricks from snapshot, sorted by height (z)

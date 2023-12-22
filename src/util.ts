@@ -1,4 +1,4 @@
-export const sum: (a: number[]) => number = (a: number[]): number => a.reduce((acc, v) => acc + v)
+export const sum: (a: number[]) => number = (a: number[]): number => a.reduce((acc, v) => acc + v, 0)
 
 export const product: (a: number[]) => number = (a: number[]): number => a.reduce((acc, v) => acc * v)
 

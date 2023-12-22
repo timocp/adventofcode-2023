@@ -15,4 +15,5 @@ const example1 = `
 describe('Day22', () => {
   const d1 = new Day22(example1)
   it('part1 example1', () => { equal(d1.part1(), 5) })
+  it('part2 example1', () => { equal(d1.part2(), 7) })
 })
