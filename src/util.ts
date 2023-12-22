@@ -19,3 +19,6 @@ export const must = <T>(t: T | undefined): T => {
   if (t === undefined) throw new Error('assertion failed: value undefined')
   return t
 }
+
+// Required because in JS "%" is a remainder instead of modulus
+export const mod: (n: number, d: number) => number = (n: number, d: number): number => ((n % d) + d) % d
