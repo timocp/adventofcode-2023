@@ -31,4 +31,5 @@ const example1 = `
 describe('Day23', () => {
   const d1 = new Day23(example1)
   it('part1 example1', () => { equal(d1.part1(), 94) })
+  it('part2 example1', () => { equal(d1.part2(), 154) })
 })
